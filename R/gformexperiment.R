@@ -521,6 +521,8 @@ read_gform <- function(survey_csv,
 #' @param vnames chracter vector of variable names to combine.
 #' @param keep_var_label Boolean to indicate whether to keep variable label (of the first varaible in <code>vnames</code>) or not.
 #' @param keep_val_labels Boolean to indicate whether to keep value labels (of the first varaible in <code>vnames</code>) or not.
+#' @param reversed_loc Integer vector to indicate the location of variables to be reversed in <code>vnames</code>.
+#' @param val_lim Integer vector of length 2 that indicates the limits of values (only used when <code>reversed_loc</code> is not NULL.)
 #'  
 #' @importFrom labelled set_variable_labels
 #' @importFrom labelled set_value_labels
@@ -530,15 +532,31 @@ read_gform <- function(survey_csv,
 #' @export
 bindquestions <- function(data, vnames,
                           keep_var_label = FALSE,
-                          keep_val_labels = TRUE) {
+                          keep_val_labels = TRUE,
+                          reversed_loc = NULL,
+                          val_lim = NULL) {
   
   ## output 
   data$vout <- rep(NA, nrow(data))
 
   ## insert values
-  for(i in 1:length(vnames)) {
-    data$vout[!is.na(data[,vnames[i]])] <- 
-      unlist(data[!is.na(data[,vnames[i]]),vnames[i]])
+  if (is.null(reversed_loc)|is.null(val_lim)) {
+    for(i in 1:length(vnames)) {
+      data$vout[!is.na(data[,vnames[i]])] <- 
+        unlist(data[!is.na(data[,vnames[i]]),vnames[i]])
+    }
+  } else {
+    for(i in 1:length(vnames)) {
+      if (length(val_lim)!=2) stop("Length of val_lim must be 2!")
+      if (i %in% reversed_loc) {
+        data$vout[!is.na(data[,vnames[i]])] <- 
+          sum(val_lim) - unlist(data[!is.na(data[,vnames[i]]),vnames[i]])
+        cat(paste0(vnames[i]," is reversed.\n"))
+      } else {
+        data$vout[!is.na(data[,vnames[i]])] <- 
+          unlist(data[!is.na(data[,vnames[i]]),vnames[i]])
+      }
+    }
   }
   
   if (keep_var_label==TRUE) {

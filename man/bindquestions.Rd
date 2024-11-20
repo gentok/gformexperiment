@@ -4,7 +4,14 @@
 \alias{bindquestions}
 \title{Combine multiple variables}
 \usage{
-bindquestions(data, vnames, keep_var_label = FALSE, keep_val_labels = TRUE)
+bindquestions(
+  data,
+  vnames,
+  keep_var_label = FALSE,
+  keep_val_labels = TRUE,
+  reversed_loc = NULL,
+  val_lim = NULL
+)
 }
 \arguments{
 \item{data}{data.frame object}
@@ -14,6 +21,10 @@ bindquestions(data, vnames, keep_var_label = FALSE, keep_val_labels = TRUE)
 \item{keep_var_label}{Boolean to indicate whether to keep variable label (of the first varaible in \if{html}{\out{<code>}}vnames\if{html}{\out{</code>}}) or not.}
 
 \item{keep_val_labels}{Boolean to indicate whether to keep value labels (of the first varaible in \if{html}{\out{<code>}}vnames\if{html}{\out{</code>}}) or not.}
+
+\item{reversed_loc}{Integer vector to indicate the location of variables to be reversed in \if{html}{\out{<code>}}vnames\if{html}{\out{</code>}}.}
+
+\item{val_lim}{Integer vector of length 2 that indicates the limits of values (only used when \if{html}{\out{<code>}}reversed_loc\if{html}{\out{</code>}} is not NULL.)}
 }
 \description{
 Combine multiple variables
