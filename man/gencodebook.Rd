@@ -6,9 +6,9 @@
 \usage{
 gencodebook(
   survey_json,
-  DKtext = "\\\\u308f\\\\u304b\\\\u3089\\\\u306a\\\\u3044",
+  DKtext = "わからない",
   DKcode = 888,
-  NAtext = "\\\\u7b54\\\\u3048\\\\u305f\\\\u304f\\\\u306a\\\\u3044",
+  NAtext = "答えたくない",
   NAcode = 999,
   text_randomize = NULL,
   text_starttime = NULL

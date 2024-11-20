@@ -6,11 +6,11 @@
 \usage{
 gensimplecodebook(
   survey_json,
-  DKtext = "\\\\u308f\\\\u304b\\\\u3089\\\\u306a\\\\u3044",
+  DKtext = "わからない",
   DKcode = 888,
-  NAtext = "\\\\u7b54\\\\u3048\\\\u305f\\\\u304f\\\\u306a\\\\u3044",
+  NAtext = "答えたくない",
   NAcode = 999,
-  OtherOptiontext = "\\\\u305d\\\\u306e\\\\u4ed6",
+  OtherOptiontext = "その他",
   OtherOptioncode = 666,
   includeTimeStamp = TRUE,
   includeEmail = FALSE,
