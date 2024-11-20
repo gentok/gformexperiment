@@ -1,0 +1,19 @@
+Package: gformexperiment
+Title: R toolkit for Google Forms experiment
+Version: 0.0.1.001
+Authors@R: 
+    person("Gento", "Kato", , "gento.badger@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-6600-0124"))
+Description: Generate HTML file to randomize prefilled answers in Google Forms, generate codebook from JSON output, import and recode Google Forms survey CSV file. 
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    dplyr,
+    jsonlite,
+    labelled,
+    magrittr,
+    tidyr,
+    utils,
+    varhandle
