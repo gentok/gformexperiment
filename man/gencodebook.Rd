@@ -15,7 +15,7 @@ gencodebook(
 )
 }
 \arguments{
-\item{survey_json}{JSON survey file exported through surveyexport.js.}
+\item{survey_json}{Name of JSON survey file exported by gformexperiment custom add-on.}
 
 \item{DKtext}{Raw full text(s) of the response option(s) that indicate "don't know" answers.}
 

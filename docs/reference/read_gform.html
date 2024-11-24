@@ -38,7 +38,7 @@
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_gform</span><span class="op">(</span></span>
-<span>  <span class="va">survey_csv</span>,</span>
+<span>  <span class="va">responses_data</span>,</span>
 <span>  <span class="va">survey_json</span>,</span>
 <span>  DKtext <span class="op">=</span> <span class="st">"わからない"</span>,</span>
 <span>  DKcode <span class="op">=</span> <span class="fl">888</span>,</span>
@@ -51,6 +51,7 @@
 <span>  includeTimeStamp <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_duration <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  includeEmail <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  survey_csv <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -59,12 +60,12 @@
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-survey-csv">survey_csv<a class="anchor" aria-label="anchor" href="#arg-survey-csv"></a></dt>
-<dd><p>CSV survey response file exported using Google Sheets output.</p></dd>
+<dl><dt id="arg-responses-data">responses_data<a class="anchor" aria-label="anchor" href="#arg-responses-data"></a></dt>
+<dd><p>Name of either one of (1) JSON responses file exported by gformexperiment custom add-on or (2) CSV survey response file exported using Google Sheets output.</p></dd>
 
 
 <dt id="arg-survey-json">survey_json<a class="anchor" aria-label="anchor" href="#arg-survey-json"></a></dt>
-<dd><p>JSON survey file exported through surveyexport.js.</p></dd>
+<dd><p>Name of JSON survey file exported by gformexperiment custom add-on.</p></dd>
 
 
 <dt id="arg-dktext">DKtext<a class="anchor" aria-label="anchor" href="#arg-dktext"></a></dt>
@@ -109,6 +110,10 @@
 
 <dt id="arg-includeemail">includeEmail<a class="anchor" aria-label="anchor" href="#arg-includeemail"></a></dt>
 <dd><p>Boolean to indicate whether to include system-generated email variable in the codebook or not.</p></dd>
+
+
+<dt id="arg-survey-csv">survey_csv<a class="anchor" aria-label="anchor" href="#arg-survey-csv"></a></dt>
+<dd><p>(deprecated) import responses data in CSV file (incorporated by <code>responses_data</code>).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

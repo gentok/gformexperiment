@@ -2,9 +2,11 @@ utils::globalVariables(c("rows"))
 
 #' Generate experiment start page (HTML)
 #'
-#' @param survey_json JSON survey file exported through surveyexport.js. 
+#' @param survey_json Name of JSON survey file exported by gformexperiment custom add-on. 
 #' @param text_randomize Raw full text(s) of the question(s) that are used to randomize experimental conditions. 
 #' @param text_starttime Raw full text of the question that is used to record starting time.
+#' @param weights_randomize Numeric vector or a list of numeric vectors indicating randomization weights. List length must be equal to the number of randomization questions. Length of each list element must be equal to the number of experimental conditions. 
+#' @param timeZone Timezone to record starting time. The default is to set the same time zone as the one set in survey_json.
 #' @param file Name and path of the output html file to be saved.
 #' 
 #' @importFrom jsonlite read_json
@@ -13,6 +15,8 @@ utils::globalVariables(c("rows"))
 genstartpage <- function(survey_json, 
                          text_randomize, 
                          text_starttime=NULL, 
+                         weights_randomize = NULL,
+                         timeZone = "survey_json timeZone",
                          file=NULL) {
   
   # require(jsonlite)
@@ -43,6 +47,41 @@ genstartpage <- function(survey_json,
     entry_time <- item_time[[1]]$entry
   } else {
     entry_time <- item_time[[1]]$entry
+  }
+
+  ## Check weights_randomize
+  if (is.null(weights_randomize)) {
+    weights_randomize <- list()
+    for (i in 1:length(entry_randomize)) {
+      weights_randomize[[i]] <- NA
+    }
+  }
+  if (is.numeric(weights_randomize)) {
+    tmp <- weights_randomize
+    weights_randomize = list()
+    weights_randomize[[1]] <- tmp
+    rm(tmp)
+  } else if (!is.list(weights_randomize)) {
+    stop("invalid weights_randomize class!")
+  }
+  if (length(weights_randomize)!=length(entry_randomize)) {
+    stop("Invalid number of weights_randomize list elements!")
+  }
+  for (i in 1:length(weights_randomize)) {
+    if (any(is.na(weights_randomize[[i]]))) {
+      if (length(weights_randomize[[i]])>1) {
+        warning("NAs in weights_randomize, not weighted.") 
+        weights_randomize[[i]] <- NA
+      }
+    }
+    if (!any(is.na(weights_randomize[[i]]))) {
+      if (length(weights_randomize[[i]])!=length(entry_randomize[[i]])) {
+        stop("weights_randomize length does not match with number of randomized conditions!") 
+      }
+      if (any(weights_randomize[[i]]<=0)) {
+        stop("weights_randomize must be positive numbers!")
+      }
+    }
   }
   
   # Generate sample prefilled URL
@@ -76,14 +115,31 @@ genstartpage <- function(survey_json,
   
   for(i in 1:length(entry_randomize)) {
     
-    ## Java script to randomly choose one random element from vector
-    entry_vec <- c(entry_vec, 
-                   paste0("var vv",abcgen(i),
-                          "=['",paste(entry_randomize[[i]], collapse="','"),
-                          "'];var vv",abcgen(i),
-                          "r=vv",abcgen(i),"[Math.floor(Math.random()*vv",
-                          abcgen(i),".length>>0)];"))
-    
+    if (any(is.na(weights_randomize[[i]]))) {
+      ## Java script to randomly choose one random element from vector
+      entry_vec <- c(entry_vec, 
+                     paste0("var vv",abcgen(i),
+                            "=['",paste(entry_randomize[[i]], collapse="','"),
+                            "'];var vv",abcgen(i),
+                            "r=vv",abcgen(i),"[Math.floor(Math.random()*vv",
+                            abcgen(i),".length>>0)];"))
+    } else {
+      
+      ## Weighted sampling
+      wr <- weights_randomize[[i]]
+      for(k in 2:length(wr)) wr[k] = wr[k]+wr[k-1]
+      wrsum <- wr[length(wr)]
+      entry_vec <- c(entry_vec, 
+                     paste0("var vv",abcgen(i),
+                            "=['",paste(entry_randomize[[i]], collapse="','"),
+                            "'];var wwr",abcgen(i),"=['",paste(wr, collapse="','"),
+                            "'];var rnd=Math.random()*",wrsum,
+                            ";for(var k=0;k<",length(wr),
+                            ";k++){if(rnd<wwr",abcgen(i),"[k]){break;}}",
+                            " var vv",abcgen(i),
+                            "r=vv",abcgen(i),"[k];"))
+      
+    }
     
     if (i==length(entry_randomize)) {
       expurl <- gsub(paste0("entry\\.",names(entry_randomize)[[i]],"=.*$"), 
@@ -99,20 +155,25 @@ genstartpage <- function(survey_json,
     
   }
   
+  ## Timezone Extraction
+  if (timeZone=="survey_json timeZone") {
+    timeZone <- lco$metadata$timeZone
+    if (is.null(timeZone)) timeZone <- "Asia/Tokyo"
+    cat(paste0("timeZone is set to ", timeZone,"\n"))
+  }
+  
   ## Modified based on https://httrksk2.github.io/RandomGen/
   ## Thanks also to this page: https://note.com/httrksk/n/nb1eeac4c9602
   # out <- paste0("<!DOCTYPE html><html><body><script>window.onload=function(){var currenttime = new Intl.DateTimeFormat('ja-JP', {dateStyle: 'medium',timeStyle: 'medium', timeZone: 'Asia/Tokyo',}).format(new Date());",paste0(entry_vec,collapse=""),"var urls=['",paste(expurl,collapse="&"),"];var weights=[1];var sumOfWeights=weights.reduce((a,b)=>a+b,0);var rnd=Math.random()*sumOfWeights;for(var i=0,sum=0;i<weights.length;i++){sum+=weights[i];if(rnd<sum){location.href=urls[i];break;}}}</script></body></html>")
-  out <- paste0("<!DOCTYPE html><html><body><script>window.onload=function(){var currenttime = new Intl.DateTimeFormat('ja-JP', {dateStyle: 'medium',timeStyle: 'medium', timeZone: 'Asia/Tokyo',}).format(new Date());",paste0(entry_vec,collapse=""),"var urls=['",paste(expurl,collapse="&"),"];for(var i=0;i<1;i++){location.href=urls[i];break;}}</script></body></html>")
+  out <- paste0("<!DOCTYPE html><html><body><script>window.onload=function(){var currenttime = new Intl.DateTimeFormat('ja-JP', {dateStyle: 'medium',timeStyle: 'medium', timeZone: '",timeZone,"',}).format(new Date());",paste0(entry_vec,collapse=""),"var urls=['",paste(expurl,collapse="&"),"];for(var i=0;i<1;i++){location.href=urls[i];break;}}</script></body></html>")
   
   if (!is.null(file)) write(out, file) else return(out)
   
-
   }
-
 
 #' Generate full-information codebook dataset
 #'
-#' @param survey_json JSON survey file exported through surveyexport.js. 
+#' @param survey_json Name of JSON survey file exported by gformexperiment custom add-on. 
 #' @param DKtext Raw full text(s) of the response option(s) that indicate "don't know" answers.
 #' @param DKcode Response code for "don't know" answers.
 #' @param NAtext Raw full text(s) of the response option(s) that indicate refused answers.
@@ -139,18 +200,18 @@ gencodebook <- function(survey_json,
   # require(magrittr)
   # require(varhandle) # check.numeric()
   
-  dco <- read_json(survey_json, simplifyVector = TRUE)$items
+  dcoall <- read_json(survey_json, simplifyVector = TRUE)$items
   
   ## Exclude PAGE_BREAK & SECTION_HEADER & IMAGE & VIDEO
-  dco <- dco[which(!dco$type%in%c("PAGE_BREAK","SECTION_HEADER",
-                                  "IMAGE","VIDEO")),]
+  dco <- dcoall[which(!dcoall$type%in%c("PAGE_BREAK","SECTION_HEADER",
+                                        "IMAGE","VIDEO")),]
   
   ## For SCALE variable, update choice values
   dco$choices[which(dco$type=="SCALE")] <- 
     lapply(which(dco$type=="SCALE"),
            function(i) as.character(seq(dco$lowerBound[i],dco$upperBound[i],by=1)))
   
-  ## For GRID variable, assume columns as choice values
+  ## For GRID variable, columns are choice values
   dco$choices[which(dco$type%in%c("GRID","CHECKBOX_GRID"))] <- 
     dco$columns[which(dco$type%in%c("GRID","CHECKBOX_GRID"))]
   ### insert nonGRID variable rows as blank
@@ -181,7 +242,7 @@ gencodebook <- function(survey_json,
     dco$index[loc_starttime] <- "timestamp_start"
   }
   if (!is.null(text_randomize)) {
-    if(length(loc_randomize)==0) stop("text_starttime not found in survey_json!")
+    if(length(loc_randomize)==0) stop("text_randomize not found in survey_json!")
     dco$index[loc_randomize] <- 
       paste0("e", sprintf(paste0("%0",nchar(length(loc_else)),"d"),
                           seq(1,length(loc_randomize))))
@@ -227,7 +288,7 @@ gencodebook <- function(survey_json,
 
 #' Generate (and export) simplified codebook
 #'
-#' @param survey_json JSON survey file exported through surveyexport.js. 
+#' @param survey_json Name of JSON survey file exported by gformexperiment custom add-on. 
 #' @param DKtext Raw full text(s) of the response option(s) that indicate "don't know" answers.
 #' @param DKcode Response code for "don't know" answers.
 #' @param NAtext Raw full text(s) of the response option(s) that indicate refused answers.
@@ -330,8 +391,8 @@ gensimplecodebook <- function(survey_json,
 
 #' Import Google Form survey CSV Data using JSON file information
 #'
-#' @param survey_csv CSV survey response file exported using Google Sheets output. 
-#' @param survey_json JSON survey file exported through surveyexport.js. 
+#' @param responses_data Name of either one of (1) JSON responses file exported by gformexperiment custom add-on or (2) CSV survey response file exported using Google Sheets output. 
+#' @param survey_json Name of JSON survey file exported by gformexperiment custom add-on. 
 #' @param DKtext Raw full text(s) of the response option(s) that indicate "don't know" answers.
 #' @param DKcode Response code for "don't know" answers.
 #' @param NAtext Raw full text(s) of the response option(s) that indicate refused answers.
@@ -343,15 +404,17 @@ gensimplecodebook <- function(survey_json,
 #' @param includeTimeStamp Boolean to indicate whether to include system-generated timestamp variable in the codebook or not. 
 #' @param show_duration Boolean to indicate whether to include duration variable in the codebook or not (if <code>text_starttime</code> is available).
 #' @param includeEmail Boolean to indicate whether to include system-generated email variable in the codebook or not. 
+#' @param survey_csv (deprecated) import responses data in CSV file (incorporated by <code>responses_data</code>).
 #' @param ... Optional argumens passed to <code>read.csv()</code> function.
 #'  
 #' @importFrom labelled set_variable_labels
 #' @importFrom labelled set_value_labels
 #' @importFrom dplyr tibble
 #' @importFrom utils read.csv
+#' @importFrom jsonlite read_json
 #' 
 #' @export
-read_gform <- function(survey_csv,
+read_gform <- function(responses_data,
                        survey_json,
                        DKtext = "\u308f\u304b\u3089\u306a\u3044", 
                        DKcode = 888, 
@@ -364,42 +427,117 @@ read_gform <- function(survey_csv,
                        includeTimeStamp = TRUE,
                        show_duration = TRUE,
                        includeEmail = FALSE,
+                       survey_csv = NULL, 
                        ...) {
   
   # require(labelled)
   # require(dplyr)
   # require(utils)
   
+  ## 
+  if (missing(responses_data) & is.null(survey_csv)) {
+    stop("Provide responses_data!")
+  } else if (missing(responses_data) & !is.null(survey_csv)) {
+    responses_data <- survey_csv
+    warning("survey_csv is deprecated. Use responses_data instead.")
+  } 
+
   ## Import survey_json
   dco <- gencodebook(survey_json,
                      DKtext,DKcode,NAtext,NAcode,
                      text_randomize, text_starttime)
   
-  ## Import variable names from survey_csv
-  dnames <- read.csv(survey_csv, header=FALSE, ...)[1,]
-  
-  ## Import survey_csv
-  d <- read.csv(survey_csv, na.strings = "", ...)
-  
-  ## Check Data Structure and replace column names
-  ### (in the case of emails collected by the system)
   if (read_json(survey_json)$metadata$collectsEmail) {
-    
-    if(ncol(d)!=nrow(dco)+2) stop("# of survey_csv columns does not match with # of variables generated from survey_json!")
-    
-    if (!all(sapply(1:nrow(dco), function(i) grepl(dco$question[i], dnames[i+2])))) stop("survey_csv column names do not match with variables generated from survey_json!")
-    
-    colnames(d) <- c("timestamp","email",dco$name)
-
-  ### (in the case of emails NOT collected by the system)
+    setcolnames <- c("timestamp","email",dco$name)
+    setidnames <- c("timestamp","email",dco$id)
+    gettypenames <- c("SYSTEM","SYSTEM",dco$type)
   } else {
+    setcolnames <- c("timestamp",dco$name)
+    setidnames <- c("timestamp",dco$id)
+    gettypenames <- c("SYSTEM",dco$type)
+  }
+  
+  ## If importing CSV file downloaded from Google Sheets
+  if (grepl("\\.csv$", responses_data)) {
     
+    ## Import variable names from survey_csv
+    dnames <- read.csv(responses_data, header=FALSE, ...)[1,]
+    
+    ## Import survey_csv
+    d <- read.csv(responses_data, na.strings = "", ...)
+    
+    ## Exclude columns with missing labels 
+    d <- d[,which(!is.na(dnames))]
+    # print(ncol(d)); print(nrow(dco))
+    
+    ## Check Data Structure and replace column names
+    ### (in the case of emails collected by the system)
+    if ("email"%in%setcolnames) {
+      
+      if(ncol(d)!=nrow(dco)+2) stop("# of survey_csv columns does not match with # of variables generated from survey_json!")
+      
+      if (!all(sapply(1:nrow(dco), function(i) grepl(dco$question[i], dnames[i+2])))) stop("survey_csv column names do not match with question texts in survey_json!")
+      
+      colnames(d) <- setcolnames
+      
+      ### (in the case of emails NOT collected by the system)
+    } else {
+      
       if(ncol(d)!=nrow(dco)+1) stop("# of survey_csv columns does not match with # of variables generated from survey_json!")
       
-      if (!all(sapply(1:nrow(dco), function(i) grepl(dco$question[i], dnames[i+1])))) stop("survey_csv column names do not match with variables generated from survey_json!")
+      if (!all(sapply(1:nrow(dco), function(i) grepl(dco$question[i], dnames[i+1])))) stop("survey_csv column names do not match with question texts in survey_json!")
       
-      colnames(d) <- c("timestamp",dco$name)
+      colnames(d) <- setcolnames
       
+    }
+    
+  ## If importing responses json file exported using surveyexport.js.
+  } else if (grepl("\\.json$", responses_data)) {
+    
+    ## Read in JSON data
+    d <- read_json(responses_data)
+    
+    ## Identify grid question locations, if any
+    getgridloc <- grep("GRID", gettypenames)
+    ## Extract grid sub question numbers, if any
+    if (length(getgridloc)>0) {
+      setgridqloc <- as.numeric(gsub("^.*_","",setcolnames[getgridloc]))
+    }
+    
+    ## Extract responses by respondents
+    genresp <- function(RESP) {
+      
+      # Each response
+      rech <- sapply(RESP, function(x) x$response)[
+        match(setidnames, sapply(RESP, function(x) x$id))
+      ]
+      
+      # Assign grid responses
+      if(length(getgridloc)>0) {
+        if (all(getgridloc==which(sapply(rech, length)>1))) {
+          rech[getgridloc] <- 
+            lapply(1:length(getgridloc), 
+                   function(i) rech[[getgridloc[i]]][[setgridqloc[i]]])  
+        } else {
+          stop("Something is wrong with GRID/CHECKBOX_GRID data!")
+        }
+      }
+      
+      # Change to NA if NULL
+      rech <- lapply(rech, function(x) if (is.null(x)) NA else x)
+      
+      # Return output
+      if (all(sapply(rech, length)==1)){
+        unlist(rech)
+      } else {
+        stop("Questions with more than one responses!")
+      }
+    }
+    
+    ## Generate dataset
+    d <- as.data.frame(t(sapply(d, genresp)))
+    colnames(d) <- setcolnames
+    
   }
 
   ## Data to export
@@ -514,6 +652,8 @@ read_gform <- function(survey_csv,
   return(dout)
   
 }
+
+
 
 #' Combine multiple variables
 #' 

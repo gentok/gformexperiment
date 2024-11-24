@@ -5,7 +5,7 @@
 \title{Import Google Form survey CSV Data using JSON file information}
 \usage{
 read_gform(
-  survey_csv,
+  responses_data,
   survey_json,
   DKtext = "わからない",
   DKcode = 888,
@@ -18,13 +18,14 @@ read_gform(
   includeTimeStamp = TRUE,
   show_duration = TRUE,
   includeEmail = FALSE,
+  survey_csv = NULL,
   ...
 )
 }
 \arguments{
-\item{survey_csv}{CSV survey response file exported using Google Sheets output.}
+\item{responses_data}{Name of either one of (1) JSON responses file exported by gformexperiment custom add-on or (2) CSV survey response file exported using Google Sheets output.}
 
-\item{survey_json}{JSON survey file exported through surveyexport.js.}
+\item{survey_json}{Name of JSON survey file exported by gformexperiment custom add-on.}
 
 \item{DKtext}{Raw full text(s) of the response option(s) that indicate "don't know" answers.}
 
@@ -47,6 +48,8 @@ read_gform(
 \item{show_duration}{Boolean to indicate whether to include duration variable in the codebook or not (if \if{html}{\out{<code>}}text_starttime\if{html}{\out{</code>}} is available).}
 
 \item{includeEmail}{Boolean to indicate whether to include system-generated email variable in the codebook or not.}
+
+\item{survey_csv}{(deprecated) import responses data in CSV file (incorporated by \if{html}{\out{<code>}}responses_data\if{html}{\out{</code>}}).}
 
 \item{...}{Optional argumens passed to \if{html}{\out{<code>}}read.csv()\if{html}{\out{</code>}} function.}
 }

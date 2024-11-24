@@ -4,14 +4,25 @@
 \alias{genstartpage}
 \title{Generate experiment start page (HTML)}
 \usage{
-genstartpage(survey_json, text_randomize, text_starttime = NULL, file = NULL)
+genstartpage(
+  survey_json,
+  text_randomize,
+  text_starttime = NULL,
+  weights_randomize = NULL,
+  timeZone = "survey_json timeZone",
+  file = NULL
+)
 }
 \arguments{
-\item{survey_json}{JSON survey file exported through surveyexport.js.}
+\item{survey_json}{Name of JSON survey file exported by gformexperiment custom add-on.}
 
 \item{text_randomize}{Raw full text(s) of the question(s) that are used to randomize experimental conditions.}
 
 \item{text_starttime}{Raw full text of the question that is used to record starting time.}
+
+\item{weights_randomize}{Numeric vector or a list of numeric vectors indicating randomization weights. List length must be equal to the number of randomization questions. Length of each list element must be equal to the number of experimental conditions.}
+
+\item{timeZone}{Timezone to record starting time. The default is to set the same time zone as the one set in survey_json.}
 
 \item{file}{Name and path of the output html file to be saved.}
 }
