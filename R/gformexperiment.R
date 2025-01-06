@@ -215,7 +215,11 @@ gencodebook <- function(survey_json,
   dco$choices[which(dco$type%in%c("GRID","CHECKBOX_GRID"))] <- 
     dco$columns[which(dco$type%in%c("GRID","CHECKBOX_GRID"))]
   ### insert nonGRID variable rows as blank
-  dco$rows[sapply(dco$rows, is.null)] <- ""
+  if ("rows"%in%names(dco)) {
+    dco$rows[sapply(dco$rows, is.null)] <- ""
+  } else {
+    dco$rows <- ""
+  }
   
   ## For TEXT variable, choice values are blank.
   dco$choices[which(dco$type%in%c("TEXT","PARAGRAPH_TEXT",
