@@ -503,7 +503,8 @@ read_gform <- function(responses_data,
     
     ## Identify grid question locations, if any
     getgridloc <- grep("GRID", gettypenames)
-    ## Extract grid sub question numbers, if any
+    # getgrididloc <- which(unique(setidnames)%in%setidnames[getgridloc])
+    # ## Extract grid sub question numbers, if any
     if (length(getgridloc)>0) {
       setgridqloc <- as.numeric(gsub("^.*_","",setcolnames[getgridloc]))
     }
@@ -515,13 +516,13 @@ read_gform <- function(responses_data,
       rech <- sapply(RESP, function(x) x$response)[
         match(setidnames, sapply(RESP, function(x) x$id))
       ]
-      
+
       # Assign grid responses
       if(length(getgridloc)>0) {
-        if (all(getgridloc==which(sapply(rech, length)>1))) {
-          rech[getgridloc] <- 
-            lapply(1:length(getgridloc), 
-                   function(i) rech[[getgridloc[i]]][[setgridqloc[i]]])  
+        if (all(getgridloc%in%which(sapply(rech, length)%in%c(0,2:1000)))) {
+          rech[getgridloc] <-
+            lapply(1:length(getgridloc),
+                   function(i) if (is.null(rech[[getgridloc[i]]][[setgridqloc[i]]])) NA else rech[[getgridloc[i]]][[setgridqloc[i]]])
         } else {
           stop("Something is wrong with GRID/CHECKBOX_GRID data!")
         }
@@ -530,14 +531,24 @@ read_gform <- function(responses_data,
       # Change to NA if NULL
       rech <- lapply(rech, function(x) if (is.null(x)) NA else x)
       
+      # Collapse checkbox responses
+      if(length(grep("CHECKBOX",gettypenames))>0) {
+        for(j in grep("CHECKBOX",gettypenames)) {
+          rech[[j]] <- paste(unlist(rech[[j]]),collapse=";;;")
+        }
+      }
+      
       # Return output
       if (all(sapply(rech, length)==1)){
         unlist(rech)
       } else {
+        
+        print(sapply(rech, length))
+        print(rech[which(sapply(rech, length)!=1)])
         stop("Questions with more than one responses!")
       }
     }
-    
+
     ## Generate dataset
     d <- as.data.frame(t(sapply(d, genresp)))
     colnames(d) <- setcolnames
@@ -568,11 +579,12 @@ read_gform <- function(responses_data,
       for(j in 1:length(dco$codes[[i]])) {
         ## Create Dummy
         dout[,paste0(dco$name[i],"_box",dco$codes[[i]][j])] <- 
-          sapply(d[,dco$name[i]], function(x) any(x%in%dco$choices[[i]][j])*1)
+          sapply(strsplit(d[,dco$name[i]],";;;"), 
+                 function(x) any(x%in%dco$choices[[i]][j])*1)
         ## Variable label
         tmplab <- dco$question[i]
         if(dco$rows[i]!="") tmplab <- paste(tmplab, "row:", dco$rows[i])
-        tmplab <- paste(tmplab, "option:", dco$codes[[i]][j])
+        tmplab <- paste(tmplab, "option:", dco$choices[[i]][j])
         dout[,paste0(dco$name[i],"_box",dco$codes[[i]][j])] <- 
           set_variable_labels(
             dout[,paste0(dco$name[i],"_box",dco$codes[[i]][j])],
@@ -581,22 +593,24 @@ read_gform <- function(responses_data,
       if (dco$hasOtherOption[i]==1) {
         ## Dummy
         dout[,paste0(dco$name[i],"_box",OtherOptioncode)] <- 
-          sapply(d[,dco$name[i]], function(x) any(!x%in%dco$choices[[i]])*1)
+          sapply(strsplit(d[,dco$name[i]],";;;"), 
+                 function(x) any(!x%in%dco$choices[[i]])*1)
         ## Variable label
         tmplab <- dco$question[i]
         if(dco$rows[i]!="") tmplab <- paste(tmplab, "row:", dco$rows[i])
-        tmplab <- paste(tmplab, "option:", dco$codes[[i]][j])
+        tmplab <- paste(tmplab, "option:", dco$choices[[i]][j])
         dout[,paste0(dco$name[i],"_box",OtherOptioncode)] <- 
           set_variable_labels(
             dout[,paste0(dco$name[i],"_box",OtherOptioncode)],
             .labels = tmplab)
         ## Free Answer
         dout[,paste0(dco$name[i],"_txt",OtherOptioncode)] <- 
-          sapply(d[,dco$name[i]], function(x) if (all(x%in%dco$choices[[i]])) {
-            NA
-          } else {
-            paste(x[which(!x%in%dco$choices[[i]])],collapse=";")
-          })
+          sapply(strsplit(d[,dco$name[i]],";;;"), 
+                 function(x) if (all(x%in%dco$choices[[i]])) {
+                  NA
+                 } else {
+                  paste(x[which(!x%in%dco$choices[[i]])],collapse=";")
+                 })
         tmplab <- paste(tmplab, "(text)")
         dout[,paste0(dco$name[i],"_txt",OtherOptioncode)] <-
           set_variable_labels(
@@ -657,14 +671,12 @@ read_gform <- function(responses_data,
   
 }
 
-
-
 #' Combine multiple variables
 #' 
 #' @param data data.frame object 
-#' @param vnames chracter vector of variable names to combine.
-#' @param keep_var_label Boolean to indicate whether to keep variable label (of the first varaible in <code>vnames</code>) or not.
-#' @param keep_val_labels Boolean to indicate whether to keep value labels (of the first varaible in <code>vnames</code>) or not.
+#' @param vnames character vector of variable names to combine.
+#' @param keep_var_label Boolean to indicate whether to keep variable label (of the first variable in <code>vnames</code>) or not.
+#' @param keep_val_labels Boolean to indicate whether to keep value labels (of the first variable in <code>vnames</code>) or not.
 #' @param reversed_loc Integer vector to indicate the location of variables to be reversed in <code>vnames</code>.
 #' @param val_lim Integer vector of length 2 that indicates the limits of values (only used when <code>reversed_loc</code> is not NULL.)
 #'  
@@ -711,10 +723,22 @@ bindquestions <- function(data, vnames,
   }
   if (keep_val_labels==TRUE) {
     # require(labelled)
-    if (!is.null(val_labels(data[,vnames[1]])[[1]])) {
+    if (is.null(reversed_loc)|is.null(val_lim)) {
+      if (!is.null(val_labels(data[,vnames[1]])[[1]])) {
         data$vout <- 
           set_value_labels(data$vout, 
                            .labels=val_labels(data[,vnames[1]])[[1]])
+      }
+    } else {
+      if (all(1:length(vnames) %in% reversed_loc)) {
+        stop("everything is reversed, unable to assign value labels.")
+      } else {
+        tmploc <- which(!1:length(vnames) %in% reversed_loc)[1]
+        data$vout <- 
+          set_value_labels(data$vout, 
+                           .labels=val_labels(data[,vnames[tmploc]])[[1]])
+      }
+      
     }
   }
   

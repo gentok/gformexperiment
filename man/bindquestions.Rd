@@ -16,11 +16,11 @@ bindquestions(
 \arguments{
 \item{data}{data.frame object}
 
-\item{vnames}{chracter vector of variable names to combine.}
+\item{vnames}{character vector of variable names to combine.}
 
-\item{keep_var_label}{Boolean to indicate whether to keep variable label (of the first varaible in \if{html}{\out{<code>}}vnames\if{html}{\out{</code>}}) or not.}
+\item{keep_var_label}{Boolean to indicate whether to keep variable label (of the first variable in \if{html}{\out{<code>}}vnames\if{html}{\out{</code>}}) or not.}
 
-\item{keep_val_labels}{Boolean to indicate whether to keep value labels (of the first varaible in \if{html}{\out{<code>}}vnames\if{html}{\out{</code>}}) or not.}
+\item{keep_val_labels}{Boolean to indicate whether to keep value labels (of the first variable in \if{html}{\out{<code>}}vnames\if{html}{\out{</code>}}) or not.}
 
 \item{reversed_loc}{Integer vector to indicate the location of variables to be reversed in \if{html}{\out{<code>}}vnames\if{html}{\out{</code>}}.}
 
