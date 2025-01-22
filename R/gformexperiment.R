@@ -345,7 +345,7 @@ gensimplecodebook <- function(survey_json,
       dco <- 
         rbind(data.frame(name = "duration", type = "SYSTEM/TEXT", 
                          required = 1, 
-                         question = "*Response time calcualated from timestamp and timestamp_start.",
+                         question = "*Response time calculated from timestamp and timestamp_start.",
                          rows = "", options = ""), dco)
     }
     dco <- 
