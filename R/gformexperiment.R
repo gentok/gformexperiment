@@ -513,7 +513,7 @@ read_gform <- function(responses_data,
     genresp <- function(RESP) {
       
       # Each response
-      rech <- sapply(RESP, function(x) x$response)[
+      rech <- lapply(RESP, function(x) x$response)[
         match(setidnames, sapply(RESP, function(x) x$id))
       ]
 
@@ -524,6 +524,7 @@ read_gform <- function(responses_data,
             lapply(1:length(getgridloc),
                    function(i) if (is.null(rech[[getgridloc[i]]][[setgridqloc[i]]])) NA else rech[[getgridloc[i]]][[setgridqloc[i]]])
         } else {
+          print(rech)
           stop("Something is wrong with GRID/CHECKBOX_GRID data!")
         }
       }
@@ -567,8 +568,11 @@ read_gform <- function(responses_data,
   if (includeTimeStamp==TRUE) {
     dout$timestamp <- as.character(d$timestamp)
     if ("timestamp_start"%in%names(d) & show_duration==TRUE) {
+      tmp_start <- d$timestamp_start
+      ## Put to NA if the response is not following the expected format
+      tmp_start[which(!grepl("^[0-9]{4}/[0-9]{2}/[0-9]{2} ([0-9]{1}|[0-9]{2}):[0-9]{2}:[0-9]{2}$", tmp_start))] <- NA
       dout$duration <- 
-        as.POSIXct(d$timestamp) - as.POSIXct(d$timestamp_start)
+        as.POSIXct(d$timestamp) - as.POSIXct(tmp_start)
     }
   } 
 
