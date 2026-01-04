@@ -1,14 +1,14 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
-<url><loc>https://gentok.github.io/gformexperiment/authors.html</loc></url>
-<url><loc>https://gentok.github.io/gformexperiment/LICENSE.html</loc></url>
-<url><loc>https://gentok.github.io/gformexperiment/LICENSE-text.html</loc></url>
-<url><loc>https://gentok.github.io/gformexperiment/index.html</loc></url>
 <url><loc>https://gentok.github.io/gformexperiment/404.html</loc></url>
-<url><loc>https://gentok.github.io/gformexperiment/reference/index.html</loc></url>
+<url><loc>https://gentok.github.io/gformexperiment/LICENSE-text.html</loc></url>
+<url><loc>https://gentok.github.io/gformexperiment/LICENSE.html</loc></url>
+<url><loc>https://gentok.github.io/gformexperiment/authors.html</loc></url>
+<url><loc>https://gentok.github.io/gformexperiment/index.html</loc></url>
 <url><loc>https://gentok.github.io/gformexperiment/reference/bindquestions.html</loc></url>
 <url><loc>https://gentok.github.io/gformexperiment/reference/gencodebook.html</loc></url>
 <url><loc>https://gentok.github.io/gformexperiment/reference/gensimplecodebook.html</loc></url>
-<url><loc>https://gentok.github.io/gformexperiment/reference/read_gform.html</loc></url>
 <url><loc>https://gentok.github.io/gformexperiment/reference/genstartpage.html</loc></url>
+<url><loc>https://gentok.github.io/gformexperiment/reference/index.html</loc></url>
+<url><loc>https://gentok.github.io/gformexperiment/reference/read_gform.html</loc></url>
 </urlset>
 

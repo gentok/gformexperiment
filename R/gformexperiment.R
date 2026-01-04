@@ -203,7 +203,7 @@ gencodebook <- function(survey_json,
   dcoall <- read_json(survey_json, simplifyVector = TRUE)$items
   
   ## Exclude PAGE_BREAK & SECTION_HEADER & IMAGE & VIDEO
-  dco <- dcoall[which(!dcoall$type%in%c("PAGE_BREAK","SECTION_HEADER",
+  dco <- dcoall[which(!dcoall$type%in%c(#"PAGE_BREAK",#"SECTION_HEADER",
                                         "IMAGE","VIDEO")),]
   
   ## For SCALE variable, update choice values
@@ -225,7 +225,13 @@ gencodebook <- function(survey_json,
   dco$choices[which(dco$type%in%c("TEXT","PARAGRAPH_TEXT",
                                   "DATETIME","DATE",
                                   "DURATION","TIME",
-                                  "FILE_UPLOAD"))] <- ""
+                                  "FILE_UPLOAD",
+                                  "PAGE_BREAK","SECTION_HEADER"))] <- ""
+  dco$gotoPage[which(dco$type%in%c("TEXT","PARAGRAPH_TEXT",
+                                  "DATETIME","DATE",
+                                  "DURATION","TIME",
+                                  "FILE_UPLOAD",
+                                  "PAGE_BREAK","SECTION_HEADER"))] <- ""
   
   ## Make Values Numeric If checked to be numeric
   dco$choices <- lapply(dco$choices, function(x) if (all(check.numeric(x,exceptions=NULL))) as.numeric(x) else x)
@@ -235,15 +241,29 @@ gencodebook <- function(survey_json,
   
   ## isRequired update
   dco$isRequired <- ifelse(dco$isRequired%in%TRUE,1,0)
+  dco$isRequired[which(dco$type%in%c("PAGE_BREAK","SECTION_HEADER"))] <- ""
   
   ## Update Index
+  loc_page <- which(dco$type%in%"PAGE_BREAK")
+  loc_header <- which(dco$type%in%"SECTION_HEADER")
   loc_starttime <- which(dco$title%in%text_starttime)
   loc_randomize <- which(dco$title%in%text_randomize)
-  loc_else <- which(!dco$title%in%c(text_starttime,text_randomize))
+  loc_else <- which(!dco$title%in%c(text_starttime,text_randomize)&
+                      !dco$type%in%c("PAGE_BREAK","SECTION_HEADER"))
   if (!is.null(text_starttime)) {
     if(length(loc_starttime)==0) stop("text_starttime not found in survey_json!")
     if(length(loc_starttime)>1) stop("more than one text_starttime found in survey_json!")
     dco$index[loc_starttime] <- "timestamp_start"
+  }
+  if (length(loc_header)>0) {
+    dco$index[loc_header] <- 
+      paste0("h", sprintf(paste0("%0",nchar(length(loc_else)),"d"),
+                          seq(1,length(loc_header))))
+  }
+  if (length(loc_page)>0) {
+    dco$index[loc_page] <- 
+      paste0("page", sprintf(paste0("%0",nchar(length(loc_else)),"d"),
+                          seq(2,length(loc_page)+1)))
   }
   if (!is.null(text_randomize)) {
     if(length(loc_randomize)==0) stop("text_randomize not found in survey_json!")
@@ -254,6 +274,12 @@ gencodebook <- function(survey_json,
   dco$index[loc_else] <- 
     paste0("v", sprintf(paste0("%0",nchar(length(loc_else)),"d"),
                                    seq(1,length(loc_else))))
+  
+  ## goToPage update
+  dco$goToPage[!dco$type%in%"PAGE_BREAK"] <- ""
+  dco$goToPage[dco$type%in%"PAGE_BREAK"] <- 
+    dco$index[match(dco$goToPage[dco$type%in%"PAGE_BREAK"],dco$id)]
+  dco$goToPage[is.na(dco$goToPage)] <- "continue"
   
   ## Expand by GRID Rows
   dco <- dco %>% unnest(rows)
@@ -280,12 +306,33 @@ gencodebook <- function(survey_json,
                       })
   dco$codes[which(dco$choices=="")] <- NA
   
+  ## Add conditional page transition to choices
+  dco$gotoPage <- lapply(dco$gotoPage, function(x) ifelse(is.na(x),"", paste0(" (to ",dco$index[match(x,dco$id)],")")))
+  dco$choices <- lapply(1:nrow(dco), function(i) paste0(dco$choices[[i]], dco$gotoPage[[i]]))
+  for (i in 1:nrow(dco)) {
+    if (dco$choices[[i]][1]==" (to NA)") {
+      dco$choices[[i]][1] <- ""
+    }
+  }
+
   ## Keep only necessary columns and rename columns
   dco <- dco[,c("index","id","type","isRequired","title","rows",
-                "choices","codes","hasOtherOption")]
+                "choices","codes","hasOtherOption","goToPage")]
   colnames(dco) <- c("name","id","type","required","question","rows",
-                     "choices","codes","hasOtherOption")
+                     "choices","codes","hasOtherOption","nextpage")
   
+  ## Update nextpage
+  dco <- 
+    rbind(data.frame(name = paste0("page", sprintf(paste0("%0",nchar(length(loc_else)),"d"),1)), 
+                     id = "",
+                     type = "PAGE_BREAK", 
+                     required = "", 
+                     question = "",
+                     rows = "", choices = "", codes = "",
+                     hasOtherOption = "", nextpage = ""), dco)
+  dco$nextpage[dco$type%in%"PAGE_BREAK"] <- 
+    c(dco$nextpage[dco$type%in%"PAGE_BREAK"][-1],"last")
+
   return(dco)
   
 }
@@ -337,7 +384,7 @@ gensimplecodebook <- function(survey_json,
   dco$options[which(dco$choices=="")] <- ""
   
   ## Keep only necessary columns and rename columns
-  dco <- dco[,c("name","type","required","question","rows","options")]
+  dco <- dco[,c("name","type","required","question","rows","options","nextpage")]
   
   ## Include timestamp variable (if applicable)
   if (includeTimeStamp) {
@@ -346,13 +393,13 @@ gensimplecodebook <- function(survey_json,
         rbind(data.frame(name = "duration", type = "SYSTEM/TEXT", 
                          required = 1, 
                          question = "*Response time calculated from timestamp and timestamp_start.",
-                         rows = "", options = ""), dco)
+                         rows = "", options = "",nextpage=""), dco)
     }
     dco <- 
       rbind(data.frame(name = "timestamp", type = "SYSTEM", 
                        required = 1, 
                        question = "*Auto recorded survey submission time.",
-                       rows = "", options = ""), dco)
+                       rows = "", options = "",nextpage=""), dco)
   }
   
   ## Include Email variable (if applicable)
@@ -362,7 +409,7 @@ gensimplecodebook <- function(survey_json,
         rbind(data.frame(name = "email", type = "SYSTEM", 
                          required = 1, 
                          question = "*Email addresses collected by the system.",
-                         rows = "", options = ""), dco)
+                         rows = "", options = "",nextpage=""), dco)
     } 
   }
   
@@ -371,7 +418,7 @@ gensimplecodebook <- function(survey_json,
     rbind(data.frame(name = "id", type = "SYSTEM", 
                      required = 1, 
                      question = "*Unique respondent identifier.",
-                     rows = "", options = ""), dco)
+                     rows = "", options = "",nextpage=""), dco)
   
   ## Export to text file (if applicable)
   if (!is.null(textout)) {
