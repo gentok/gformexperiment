@@ -2,7 +2,7 @@ pandoc: 3.1.11
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles: {}
-last_built: 2026-01-04T17:31Z
+last_built: 2026-01-04T23:31Z
 urls:
   reference: https://gentok.github.io/gformexperiment/reference
   article: https://gentok.github.io/gformexperiment/articles
