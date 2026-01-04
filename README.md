@@ -1,5 +1,5 @@
 # <code>gformexperiment</code> Package
-Developed by Gento Kato (Last Updated: 2025/01/22) 
+Developed by Gento Kato (Last Updated: 2026/01/05) 
 
 ## Description
 
@@ -22,6 +22,7 @@ Generate HTML file to randomize prefilled answers in Google Forms, generate code
 
 ## Updates Log
 
+* 2026/01/05 Version 0.0.2.002 Adding attach_gotoPage argument to gencodebook() and bug fixes in read_gform()
 * 2026/01/05 Version 0.0.2.001 Expanded contents exported by gensimplecodebook() and gencodebook()
 * 2025/01/22 Version 0.0.1.005 Bug fixes in read_gform()
 * 2025/01/22 Version 0.0.1.004.1 Adjusted small typo in gensimplecodebook()

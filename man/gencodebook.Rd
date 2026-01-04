@@ -11,7 +11,8 @@ gencodebook(
   NAtext = "答えたくない",
   NAcode = 999,
   text_randomize = NULL,
-  text_starttime = NULL
+  text_starttime = NULL,
+  attach_gotoPage = TRUE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ gencodebook(
 \item{text_randomize}{Raw full text(s) of the question(s) that are used to randomize experimental conditions.}
 
 \item{text_starttime}{Raw full text of the question that is used to record starting time.}
+
+\item{attach_gotoPage}{If there is page transition conditional on answers, attach the next page to choices.}
 }
 \description{
 Generate full-information codebook dataset

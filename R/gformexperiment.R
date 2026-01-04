@@ -180,6 +180,7 @@ genstartpage <- function(survey_json,
 #' @param NAcode Response code for refused answers.
 #' @param text_randomize Raw full text(s) of the question(s) that are used to randomize experimental conditions. 
 #' @param text_starttime Raw full text of the question that is used to record starting time.
+#' @param attach_gotoPage If there is page transition conditional on answers, attach the next page to choices. 
 #' 
 #' @importFrom jsonlite read_json
 #' @importFrom tidyr unnest
@@ -193,7 +194,8 @@ gencodebook <- function(survey_json,
                         NAtext = "\u7b54\u3048\u305f\u304f\u306a\u3044", 
                         NAcode = 999,
                         text_randomize = NULL,
-                        text_starttime = NULL) {
+                        text_starttime = NULL,
+                        attach_gotoPage = TRUE) {
 
   # require(jsonlite)
   # require(tidyr)
@@ -306,12 +308,14 @@ gencodebook <- function(survey_json,
                       })
   dco$codes[which(dco$choices=="")] <- NA
   
-  ## Add conditional page transition to choices
-  dco$gotoPage <- lapply(dco$gotoPage, function(x) ifelse(is.na(x),"", paste0(" (to ",dco$index[match(x,dco$id)],")")))
-  dco$choices <- lapply(1:nrow(dco), function(i) paste0(dco$choices[[i]], dco$gotoPage[[i]]))
-  for (i in 1:nrow(dco)) {
-    if (dco$choices[[i]][1]==" (to NA)") {
-      dco$choices[[i]][1] <- ""
+  if (attach_gotoPage == TRUE) {
+    ## Add conditional page transition to choices
+    dco$gotoPage <- lapply(dco$gotoPage, function(x) ifelse(is.na(x),"", paste0(" (to ",dco$index[match(x,dco$id)],")")))
+    dco$choices <- lapply(1:nrow(dco), function(i) paste0(dco$choices[[i]], dco$gotoPage[[i]]))
+    for (i in 1:nrow(dco)) {
+      if (dco$choices[[i]][1]==" (to NA)") {
+        dco$choices[[i]][1] <- ""
+      }
     }
   }
 
@@ -496,7 +500,8 @@ read_gform <- function(responses_data,
   ## Import survey_json
   dco <- gencodebook(survey_json,
                      DKtext,DKcode,NAtext,NAcode,
-                     text_randomize, text_starttime)
+                     text_randomize, text_starttime,
+                     attach_gotoPage = FALSE)
   
   if (read_json(survey_json)$metadata$collectsEmail) {
     setcolnames <- c("timestamp","email",dco$name)
