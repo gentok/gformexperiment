@@ -727,6 +727,198 @@ read_gform <- function(responses_data,
   
 }
 
+#' Generate fake data with random responses using JSON file information
+#'
+#' @param survey_json Name of JSON survey file exported by gformexperiment custom add-on. 
+#' @param sample_size Sample size for fake data.
+#' @param rate_missing The rate of missing data to occur for any variable that is not required.
+#' @param custom_weights Named list object that indicates baseline weights for generating fake answers for designated questions. List element names must correspond to <code>name</code> and list element lengths must match with the length of <code>codes</codes> (+1 if there is 'other' option). 
+#' @param DKtext Raw full text(s) of the response option(s) that indicate "don't know" answers.
+#' @param DKcode Response code for "don't know" answers.
+#' @param NAtext Raw full text(s) of the response option(s) that indicate refused answers.
+#' @param NAcode Response code for refused answers.
+#' @param OtherOptiontext Texts in the codebook to indicate "other" answers.
+#' @param OtherOptioncode Response code for "other" answers.
+#' @param text_randomize Raw full text(s) of the question(s) that are used to randomize experimental conditions. 
+#' @param text_starttime Raw full text of the question that is used to record starting time.
+#'  
+#' @importFrom labelled set_variable_labels
+#' @importFrom labelled set_value_labels
+#' @importFrom dplyr tibble
+#' @importFrom jsonlite read_json
+#' 
+#' @export
+genfakedata <- function(survey_json,
+                        sample_size = 1000,
+                        rate_missing = 0.01,
+                        custom_weights = NULL,
+                        DKtext = "\u308f\u304b\u3089\u306a\u3044", 
+                        DKcode = 888, 
+                        NAtext = "\u7b54\u3048\u305f\u304f\u306a\u3044", 
+                        NAcode = 999,
+                        OtherOptiontext = "\u305d\u306e\u4ed6",
+                        OtherOptioncode = 666,
+                        text_randomize = NULL,
+                        text_starttime = NULL) {
+  
+  # require(labelled)
+  # require(dplyr)
+  # require(utils)
+  
+  ## Import survey_json
+  dco <- gencodebook(survey_json,
+                     DKtext,DKcode,NAtext,NAcode,
+                     text_randomize, text_starttime,
+                     attach_gotoPage = FALSE)
+  dco <- subset(dco, grepl("^v|^e", dco$name))
+  
+  ## Data to export
+  dout <- tibble(id = 1:sample_size)
+  
+  ## Generate Variables
+  for(i in 1:nrow(dco)) {
+    ## If Check Box Questions, Create Dummy Variables for Each Category
+    if (dco$type[i]%in%c("CHECKBOX","CHECKBOX_GRID")) {
+      ## If custom weights exist
+      if (dco$name[i] %in% names(custom_weights)) {
+        if (length(custom_weights)==length(dco$codes[[i]])) {
+          if (dco$hasOtherOption[i]==1) {
+            warning(paste0(dco$name[i],"'s custom_weights length is incorrect. Custom weights not used")) 
+            setproblist <- NULL
+          } else {
+            setproblist <- custom_weights
+          }
+        } else if (length(custom_weights)==length(dco$codes[[i]])+1) {
+          if (dco$hasOtherOption[i]==0) {
+            warning(paste0(dco$name[i],"'s custom_weights length is incorrect. Custom weights not used")) 
+            setproblist <- NULL
+          } else {
+            setproblist <- custom_weights
+          }
+        }
+      }
+      for(j in 1:length(dco$codes[[i]])) {
+        ## Create Dummy
+        dout[,paste0(dco$name[i],"_box",dco$codes[[i]][j])] <- 
+          sample(c(0,1), sample_size, 
+                 replace = TRUE, 
+                 prob = c(1-setproblist[j],setproblist[j]))
+        ## Variable label
+        tmplab <- dco$question[i]
+        if(dco$rows[i]!="") tmplab <- paste(tmplab, "row:", dco$rows[i])
+        tmplab <- paste(tmplab, "option:", dco$choices[[i]][j])
+        dout[,paste0(dco$name[i],"_box",dco$codes[[i]][j])] <- 
+          set_variable_labels(
+            dout[,paste0(dco$name[i],"_box",dco$codes[[i]][j])],
+            .labels = tmplab)
+      }
+      if (dco$hasOtherOption[i]==1) {
+        ## Dummy
+        dout[,paste0(dco$name[i],"_box",OtherOptioncode)] <- 
+          sample(c(0,1), sample_size, 
+                 replace = TRUE, 
+                 prob = c(1-setproblist[length(setproblist)],
+                          setproblist[length(setproblist)]))
+        ## Variable label
+        tmplab <- dco$question[i]
+        if(dco$rows[i]!="") tmplab <- paste(tmplab, "row:", dco$rows[i])
+        tmplab <- paste(tmplab, "option:", dco$choices[[i]][j])
+        dout[,paste0(dco$name[i],"_box",OtherOptioncode)] <- 
+          set_variable_labels(
+            dout[,paste0(dco$name[i],"_box",OtherOptioncode)],
+            .labels = tmplab)
+        ## Free Answer
+        dout[,paste0(dco$name[i],"_txt",OtherOptioncode)] <- 
+          ifelse(dout[,paste0(dco$name[i],"_box",OtherOptioncode)]==1,
+                 "random text", NA)
+        tmplab <- paste(tmplab, "(text)")
+        dout[,paste0(dco$name[i],"_txt",OtherOptioncode)] <-
+          set_variable_labels(
+            dout[,paste0(dco$name[i],"_txt",OtherOptioncode)], 
+            .labels = tmplab)
+      }
+      ## If Multiple Choice/List/Scale Questions, 
+    } else if (dco$type[i]%in%c("MULTIPLE_CHOICE","LIST",
+                                "GRID","SCALE")) {
+      ## Without OtherOption:
+      if (dco$hasOtherOption[i]==0) {
+        ## If custom weights assigned
+        setprob <- NULL
+        if (dco$name[i] %in% names(custom_weights)) {
+          cw <- custom_weights[[which(names(custom_weights)==dco$name[i])]]
+          if (length(cw)!=length(dco$codes[[i]])) {
+            warning(paste0(dco$name[i],"'s custom_weights length is incorrect. Custom weights not used")) 
+            setprob <- NULL
+          } else {
+            setprob <- cw
+          }
+        }
+        ## Main variable
+        dout[,dco$name[i]] <- 
+          sample(dco$codes[[i]], sample_size, 
+                 replace = TRUE, prob = setprob)
+        if (rate_missing > 0 & dco$required[i]==0) {
+          dout[sample.int(sample_size, round(sample_size*rate_missing)),dco$name[i]] <- NA
+        }
+        ## Set labels if labels different from values
+        if (!all(dco$choices[[i]]==dco$codes[[i]])) {
+          tmplab <- dco$codes[[i]]
+          names(tmplab) <- dco$choices[[i]]
+          dout[,dco$name[i]] <- 
+            set_value_labels(dout[,dco$name[i]], .labels = tmplab)
+        }
+        ## With OtherOption: 
+      } else {
+        ## If custom weights assigned
+        setprob <- NULL
+        if (dco$name[i] %in% names(custom_weights)) {
+          cw <- custom_weights[[which(names(custom_weights)==dco$name[i])]]
+          if (length(cw)!=length(dco$codes[[i]])+1) {
+            warning(paste0(dco$name[i],"'s custom_weights length is incorrect. Custom weights not used")) 
+            setprob <- NULL
+          } else {
+            setprob <- cw
+          }
+        }
+        ## Main variable
+        dout[,dco$name[i]] <- 
+          sample(c(dco$codes[[i]],OtherOptioncode), sample_size, 
+                 replace = TRUE, prob = setprob)
+        if (rate_missing > 0 & dco$required[i]==0) {
+          dout[sample.int(sample_size, round(sample_size*rate_missing)),dco$name[i]] <- NA
+        }
+        ## Set labels
+        tmplab <- c(dco$codes[[i]],OtherOptioncode)
+        names(tmplab) <- c(dco$choices[[i]],OtherOptiontext)
+        dout[,dco$name[i]] <- 
+          set_value_labels(dout[,dco$name[i]], .labels = tmplab)
+        ## OtherOption open-ended answers
+        dout[,paste0(dco$name[i],"_txt",OtherOptioncode)] <- 
+          ifelse(dout[,dco$name[i]]%in%OtherOptioncode,"random text",NA)
+        ## Variable label for open-ended answer
+        tmplab <- paste(dco$question[i], "option:", OtherOptiontext, "(text)")
+        dout[,paste0(dco$name[i],"_txt",OtherOptioncode)] <-
+          set_variable_labels(dout[,paste0(dco$name[i],"_txt",OtherOptioncode)],
+                              .labels = tmplab)
+      }
+      ## Variable label
+      tmplab <- dco$question[i]
+      if(dco$rows[i]!="") tmplab <- paste(tmplab, "row:", dco$rows[i])
+      dout[,dco$name[i]] <- 
+        set_variable_labels(dout[,dco$name[i]], .labels = tmplab)
+      ## If Other Response Format
+    } else {
+      dout[,dco$name[i]] <- "random text"
+      ## Variable label
+      dout[,dco$name[i]] <- 
+        set_variable_labels(dout[,dco$name[i]], .labels = dco$question[i])
+    }
+  }
+  
+  return(dout)
+  
+}
+
 #' Combine multiple variables
 #' 
 #' @param data data.frame object 

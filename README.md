@@ -14,6 +14,7 @@ Generate HTML file to randomize prefilled answers in Google Forms, generate code
 * <code>genstartpage</code> Generate experiment start page (HTML).
 * <code>gensimplecodebook</code> Generate (and export) simplified codebook.
 * <code>read_gform</code> Import Google Form survey data using JSON survey information.
+* <code>genfakedata</code> Generate fake data to conduct trial analysis.
 * <code>bindquestions</code> Combine multiple variables.
 
 ## Supplemental Functions
@@ -22,6 +23,7 @@ Generate HTML file to randomize prefilled answers in Google Forms, generate code
 
 ## Updates Log
 
+* 2026/01/05 Version 0.0.2.003 Added genfakedata() function
 * 2026/01/05 Version 0.0.2.002 Adding attach_gotoPage argument to gencodebook() and bug fixes in read_gform()
 * 2026/01/05 Version 0.0.2.001 Expanded contents exported by gensimplecodebook() and gencodebook()
 * 2025/01/22 Version 0.0.1.005 Bug fixes in read_gform()

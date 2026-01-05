@@ -2,6 +2,7 @@
 
 export(bindquestions)
 export(gencodebook)
+export(genfakedata)
 export(gensimplecodebook)
 export(genstartpage)
 export(read_gform)
