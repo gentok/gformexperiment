@@ -19,6 +19,7 @@ responses data file. The package website is published
 - `gensimplecodebook` Generate (and export) simplified codebook.
 - `read_gform` Import Google Form survey data using JSON survey
   information.
+- `genfakedata` Generate fake data to conduct trial analysis.
 - `bindquestions` Combine multiple variables.
 
 ## Supplemental Functions
@@ -27,6 +28,7 @@ responses data file. The package website is published
 
 ## Updates Log
 
+- 2026/01/05 Version 0.0.2.003 Added genfakedata() function
 - 2026/01/05 Version 0.0.2.002 Adding attach_gotoPage argument to
   gencodebook() and bug fixes in read_gform()
 - 2026/01/05 Version 0.0.2.001 Expanded contents exported by
