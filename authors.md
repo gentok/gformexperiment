@@ -8,13 +8,13 @@
 ## Citation
 
 Kato G (2026). *gformexperiment: R toolkit for Google Forms experiment*.
-R package version 0.0.2.003,
+R package version 0.0.2.004,
 <https://gentok.github.io/gformexperiment/>.
 
     @Manual{,
       title = {gformexperiment: R toolkit for Google Forms experiment},
       author = {Gento Kato},
       year = {2026},
-      note = {R package version 0.0.2.003},
+      note = {R package version 0.0.2.004},
       url = {https://gentok.github.io/gformexperiment/},
     }

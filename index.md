@@ -1,6 +1,6 @@
 # `gformexperiment` Package
 
-Developed by Gento Kato (Last Updated: 2026/01/05)
+Developed by Gento Kato (Last Updated: 2026/01/07)
 
 ## Description
 
@@ -28,6 +28,7 @@ responses data file. The package website is published
 
 ## Updates Log
 
+- 2026/01/07 Version 0.0.2.004 Bug fixes in read_gform()
 - 2026/01/05 Version 0.0.2.003 Added genfakedata() function
 - 2026/01/05 Version 0.0.2.002 Adding attach_gotoPage argument to
   gencodebook() and bug fixes in read_gform()
