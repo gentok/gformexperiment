@@ -1,6 +1,6 @@
 Package: gformexperiment
 Title: R toolkit for Google Forms experiment
-Version: 0.0.2.003
+Version: 0.0.2.004
 Authors@R: 
     person("Gento", "Kato", , "gento.badger@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-6600-0124"))

@@ -502,6 +502,8 @@ read_gform <- function(responses_data,
                      DKtext,DKcode,NAtext,NAcode,
                      text_randomize, text_starttime,
                      attach_gotoPage = FALSE)
+  ## Omit header and page break rows
+  dco <- subset(dco, !dco$type%in%c("PAGE_BREAK","SECTION_HEADER"))
   
   if (read_json(survey_json)$metadata$collectsEmail) {
     setcolnames <- c("timestamp","email",dco$name)
